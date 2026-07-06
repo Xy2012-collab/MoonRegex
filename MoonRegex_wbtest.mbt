@@ -308,3 +308,155 @@ test "negated range class" {
     None => assert_eq!(true, false)
   }
 }
+
+test "counted repetition exact {n}" {
+  match Regex::new("a{3}") {
+    Some(r) => {
+      assert_eq!(r.matches("aaa"), true)
+      assert_eq!(r.matches("aa"), false)
+      assert_eq!(r.matches("aaaa"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "counted repetition at least {n,}" {
+  match Regex::new("a{2,}") {
+    Some(r) => {
+      assert_eq!(r.matches("aa"), true)
+      assert_eq!(r.matches("aaa"), true)
+      assert_eq!(r.matches("a"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "counted repetition range {n,m}" {
+  match Regex::new("a{2,4}") {
+    Some(r) => {
+      assert_eq!(r.matches("aa"), true)
+      assert_eq!(r.matches("aaa"), true)
+      assert_eq!(r.matches("aaaa"), true)
+      assert_eq!(r.matches("a"), false)
+      assert_eq!(r.matches("aaaaa"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "phone number pattern" {
+  match Regex::new("\\d{3}-\\d{4}-\\d{4}") {
+    Some(r) => {
+      assert_eq!(r.matches("138-0000-1234"), true)
+      assert_eq!(r.matches("12-3456-7890"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "date pattern" {
+  match Regex::new("\\d{4}-\\d{2}-\\d{2}") {
+    Some(r) => {
+      assert_eq!(r.matches("2026-07-04"), true)
+      assert_eq!(r.matches("2026-7-4"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "hex color pattern" {
+  match Regex::new("#[0-9A-Fa-f]{6}") {
+    Some(r) => {
+      assert_eq!(r.matches("#FF5733"), true)
+      assert_eq!(r.matches("#123abc"), true)
+      assert_eq!(r.matches("#12AB"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "find multiple positions" {
+  match Regex::new("ab") {
+    Some(r) => {
+      let pos = r.find_all("ab cd ab ef ab")
+      assert_eq!(pos.length(), 3)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "empty string matches" {
+  match Regex::new("x*") {
+    Some(r) => assert_eq!(r.matches(""), true)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "D escape non-digit" {
+  match Regex::new("\\D+") {
+    Some(r) => {
+      assert_eq!(r.matches("abc"), true)
+      assert_eq!(r.matches("123"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "W escape non-word" {
+  match Regex::new("\\W+") {
+    Some(r) => {
+      assert_eq!(r.matches("!!!@@@"), true)
+      assert_eq!(r.matches("abc123"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "S escape non-space" {
+  match Regex::new("\\S+") {
+    Some(r) => {
+      assert_eq!(r.matches("hello"), true)
+      assert_eq!(r.matches("   "), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "complex pattern with groups and quantifiers" {
+  match Regex::new("(ab|cd){2}xy(z){3}") {
+    Some(r) => {
+      assert_eq!(r.matches("ababxyzzz"), true)
+      assert_eq!(r.matches("cdcdxyzzz"), true)
+      assert_eq!(r.matches("abcdxyzz"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "split with no matches returns full string" {
+  match Regex::new(",") {
+    Some(r) => {
+      let parts = r.split("no commas here")
+      assert_eq!(parts.length(), 1)
+      assert_eq!(parts[0], "no commas here")
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "replace multiple occurrences" {
+  match Regex::new("\\d+") {
+    Some(r) => assert_eq!(r.replace("a1b23c456", "X"), "aXbXcX")
+    None => assert_eq!(true, false)
+  }
+}
+
+test "combined range and escape" {
+  match Regex::new("[a-z0-9]+") {
+    Some(r) => {
+      assert_eq!(r.matches("abc123"), true)
+      assert_eq!(r.matches("ABC"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}

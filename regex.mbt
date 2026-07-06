@@ -46,7 +46,113 @@ fn parse_piece(pattern : String, pos : Int) -> (RegexAST, Int) {
   if qch == "*" { (RegexAST::Star(atom), p1 + 1) }
   else if qch == "+" { (RegexAST::Plus(atom), p1 + 1) }
   else if qch == "?" { (RegexAST::Opt(atom), p1 + 1) }
+  else if qch == "{" { parse_counted(atom, pattern, p1 + 1) }
   else { (atom, p1) }
+}
+
+fn parse_counted(atom : RegexAST, pattern : String, pos : Int) -> (RegexAST, Int) {
+  let (min_str, p1) = read_number(pattern, pos)
+  if p1 >= pattern.length() { return (atom, pos) }
+  let ch = pattern.substring(start=p1, end=p1 + 1)
+  if ch == "}" {
+    let min_val = parse_int_str(min_str)
+    (repeat_exact(atom, min_val), p1 + 1)
+  } else if ch == "," {
+    let p2 = p1 + 1
+    if p2 < pattern.length() && pattern.substring(start=p2, end=p2 + 1) == "}" {
+      // {n,} — at least n
+      let min_val = parse_int_str(min_str)
+      (repeat_at_least(atom, min_val), p2 + 1)
+    } else {
+      let (max_str, p3) = read_number(pattern, p2)
+      if p3 < pattern.length() && pattern.substring(start=p3, end=p3 + 1) == "}" {
+        let min_val = parse_int_str(min_str)
+        let max_val = parse_int_str(max_str)
+        (repeat_range_ast(atom, min_val, max_val), p3 + 1)
+      } else {
+        (atom, pos)
+      }
+    }
+  } else {
+    (atom, pos)
+  }
+}
+
+fn read_number(pattern : String, pos : Int) -> (String, Int) {
+  read_digits(pattern, pos, "")
+}
+
+fn read_digits(pattern : String, pos : Int, acc : String) -> (String, Int) {
+  if pos >= pattern.length() { (acc, pos) }
+  else {
+    let ch = pattern.substring(start=pos, end=pos + 1)
+    if ch >= "0" && ch <= "9" { read_digits(pattern, pos + 1, acc + ch) }
+    else { (acc, pos) }
+  }
+}
+
+fn parse_int_str(s : String) -> Int {
+  parse_int_rec(s, 0, 0)
+}
+
+fn parse_int_rec(s : String, idx : Int, acc : Int) -> Int {
+  if idx >= s.length() { acc }
+  else {
+    let ch = s.substring(start=idx, end=idx + 1)
+    let d = match ch {
+      "0" => 0; "1" => 1; "2" => 2; "3" => 3; "4" => 4
+      "5" => 5; "6" => 6; "7" => 7; "8" => 8; "9" => 9
+      _ => 0
+    }
+    parse_int_rec(s, idx + 1, acc * 10 + d)
+  }
+}
+
+fn repeat_exact(ast : RegexAST, n : Int) -> RegexAST {
+  repeat_concat(ast, n, RegexAST::Empty)
+}
+
+fn repeat_concat(ast : RegexAST, n : Int, acc : RegexAST) -> RegexAST {
+  match acc {
+    RegexAST::Empty => {
+      if n <= 0 { RegexAST::Empty }
+      else if n == 1 { ast }
+      else { repeat_concat(ast, n - 1, ast) }
+    }
+    _ => {
+      if n <= 0 { acc }
+      else { repeat_concat(ast, n - 1, RegexAST::Seq(ast, acc)) }
+    }
+  }
+}
+
+fn repeat_at_least(ast : RegexAST, min_val : Int) -> RegexAST {
+  let required = repeat_exact(ast, min_val)
+  match required {
+    RegexAST::Empty => RegexAST::Star(ast)
+    _ => RegexAST::Seq(required, RegexAST::Star(ast))
+  }
+}
+
+fn repeat_range_ast(ast : RegexAST, min_val : Int, max_val : Int) -> RegexAST {
+  if min_val >= max_val { return repeat_exact(ast, min_val) }
+  let required = repeat_exact(ast, min_val)
+  let optional_count = max_val - min_val
+  let opt_part = repeat_optional(ast, optional_count)
+  match required {
+    RegexAST::Empty => opt_part
+    _ => match opt_part {
+      RegexAST::Empty => required
+      _ => RegexAST::Seq(required, opt_part)
+    }
+  }
+}
+
+fn repeat_optional(ast : RegexAST, n : Int) -> RegexAST {
+  if n <= 0 { RegexAST::Empty }
+  else {
+    RegexAST::Seq(RegexAST::Opt(ast), repeat_optional(ast, n - 1))
+  }
 }
 
 fn parse_atom(pattern : String, pos : Int) -> (RegexAST, Int) {

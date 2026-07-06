@@ -460,3 +460,111 @@ test "combined range and escape" {
     None => assert_eq!(true, false)
   }
 }
+
+test "exact repetition zero" {
+  match Regex::new("a{0}") {
+    Some(r) => assert_eq!(r.matches(""), true)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "exact repetition one" {
+  match Regex::new("a{1}") {
+    Some(r) => {
+      assert_eq!(r.matches("a"), true)
+      assert_eq!(r.matches("aa"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "range repetition zero to one" {
+  match Regex::new("a{0,1}") {
+    Some(r) => {
+      assert_eq!(r.matches(""), true)
+      assert_eq!(r.matches("a"), true)
+      assert_eq!(r.matches("aa"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "find all non-overlapping" {
+  match Regex::new("aa") {
+    Some(r) => assert_eq!(r.find_all("aaabaa").length() > 0, true)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "replace no change" {
+  match Regex::new("z") {
+    Some(r) => assert_eq!(r.replace("hello", "X"), "hello")
+    None => assert_eq!(true, false)
+  }
+}
+
+test "split empty string" {
+  match Regex::new(",") {
+    Some(r) => {
+      let parts = r.split("")
+      assert_eq!(parts.length(), 1)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "count range repeat" {
+  match Regex::new("[a-z]{3,5}") {
+    Some(r) => {
+      assert_eq!(r.matches("abc"), true)
+      assert_eq!(r.matches("abcd"), true)
+      assert_eq!(r.matches("abcde"), true)
+      assert_eq!(r.matches("ab"), false)
+      assert_eq!(r.matches("abcdef"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "ip address pattern" {
+  match Regex::new("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}") {
+    Some(r) => {
+      assert_eq!(r.matches("192.168.1.1"), true)
+      assert_eq!(r.matches("10.0.0.1"), true)
+      assert_eq!(r.matches("256.1.1.1"), true)
+      assert_eq!(r.matches("1.1.1"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "alternation with quantifier" {
+  match Regex::new("(cat|dog|bird)s?") {
+    Some(r) => {
+      assert_eq!(r.matches("cat"), true)
+      assert_eq!(r.matches("cats"), true)
+      assert_eq!(r.matches("dog"), true)
+      assert_eq!(r.matches("dogs"), true)
+      assert_eq!(r.matches("fish"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+
+test "unicode support" {
+  match Regex::new(".+") {
+    Some(r) => assert_eq!(r.matches("你好世界"), true)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "multiple groups" {
+  match Regex::new("(ab)(cd)(ef)") {
+    Some(r) => {
+      assert_eq!(r.matches("abcdef"), true)
+      assert_eq!(r.matches("ab"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}

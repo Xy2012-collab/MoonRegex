@@ -1,0 +1,7 @@
+// import {
+//   "placeholder/MoonRegex" @lib,
+// }
+
+options(
+  "is-main": true,
+)

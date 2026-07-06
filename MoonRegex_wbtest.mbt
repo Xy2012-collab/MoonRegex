@@ -179,3 +179,132 @@ test "escape non-special char" {
     None => assert_eq!(true, false)
   }
 }
+
+test "range a-z class" {
+  match Regex::new("[a-z]+") {
+    Some(r) => {
+      assert_eq!(r.matches("hello"), true)
+      assert_eq!(r.matches("HELLO"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "range 0-9 class" {
+  match Regex::new("[0-9]+") {
+    Some(r) => {
+      assert_eq!(r.matches("12345"), true)
+      assert_eq!(r.matches("abc"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "range A-Z class" {
+  match Regex::new("[A-Z]+") {
+    Some(r) => {
+      assert_eq!(r.matches("HELLO"), true)
+      assert_eq!(r.matches("hello"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "split by regex" {
+  match Regex::new(",") {
+    Some(r) => {
+      let parts = r.split("a,b,c")
+      assert_eq!(parts.length(), 3)
+      assert_eq!(parts[0], "a")
+      assert_eq!(parts[1], "b")
+      assert_eq!(parts[2], "c")
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "split by whitespace" {
+  match Regex::new("\\s+") {
+    Some(r) => {
+      let parts = r.split("one two three")
+      assert_eq!(parts.length(), 3)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "count matches" {
+  match Regex::new("the") {
+    Some(r) => assert_eq!(r.count("the cat and the dog"), 2)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "count no matches" {
+  match Regex::new("zebra") {
+    Some(r) => assert_eq!(r.count("no matches here"), 0)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "match result successful" {
+  match Regex::new("hello") {
+    Some(r) => {
+      let result = r.match_result("hello world")
+      assert_eq!(result.matched, true)
+      assert_eq!(result.start, 0)
+      assert_eq!(result.end, 5)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "match result failed" {
+  match Regex::new("xyz") {
+    Some(r) => {
+      let result = r.match_result("hello")
+      assert_eq!(result.matched, false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "email pattern" {
+  match Regex::new("\\w+@\\w+\\.\\w+") {
+    Some(r) => {
+      assert_eq!(r.matches("test@example.com"), true)
+      assert_eq!(r.matches("not-an-email"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "star with alternation" {
+  match Regex::new("(ab|cd)*") {
+    Some(r) => {
+      assert_eq!(r.matches(""), true)
+      assert_eq!(r.matches("ab"), true)
+      assert_eq!(r.matches("cd"), true)
+      assert_eq!(r.matches("abcd"), true)
+      assert_eq!(r.matches("ababcdcd"), true)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "replace with empty string" {
+  match Regex::new("\\s+") {
+    Some(r) => assert_eq!(r.replace("a  b   c", ""), "abc")
+    None => assert_eq!(true, false)
+  }
+}
+
+test "negated range class" {
+  match Regex::new("[^a-z]+") {
+    Some(r) => {
+      assert_eq!(r.matches("123"), true)
+      assert_eq!(r.matches("abc"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}

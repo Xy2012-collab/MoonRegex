@@ -93,10 +93,82 @@ fn parse_class_inner(pattern : String, pos : Int, chars : Array[String], negate 
   let ch = pattern.substring(start=pos, end=pos + 1)
   if ch == "]" {
     (RegexAST::Class(chars, negate), pos + 1)
+  } else if pos + 2 < pattern.length() && pattern.substring(start=pos + 1, end=pos + 2) == "-" {
+    // Character range: a-z
+    let next_ch = pattern.substring(start=pos + 2, end=pos + 3)
+    if next_ch != "]" {
+      expand_range(ch, next_ch, chars)
+      parse_class_inner(pattern, pos + 3, chars, negate)
+    } else {
+      chars.push(ch)
+      parse_class_inner(pattern, pos + 1, chars, negate)
+    }
   } else {
     chars.push(ch)
     parse_class_inner(pattern, pos + 1, chars, negate)
   }
+}
+
+fn expand_range(start_ch : String, end_ch : String, chars : Array[String]) -> Unit {
+  let start = char_to_int(start_ch)
+  let end = char_to_int(end_ch)
+  range_add(start, end, chars)
+}
+
+fn range_add(start : Int, end : Int, chars : Array[String]) -> Unit {
+  if start <= end {
+    chars.push(int_to_char(start))
+    range_add(start + 1, end, chars)
+  } else {
+    // done
+  }
+}
+
+fn char_to_int(ch : String) -> Int {
+  if ch == "0" { 48 } else if ch == "1" { 49 } else if ch == "2" { 50 } else if ch == "3" { 51 } else if ch == "4" { 52 }
+  else if ch == "5" { 53 } else if ch == "6" { 54 } else if ch == "7" { 55 } else if ch == "8" { 56 } else if ch == "9" { 57 }
+  else if ch == "A" { 65 } else if ch == "B" { 66 } else if ch == "C" { 67 } else if ch == "D" { 68 } else if ch == "E" { 69 }
+  else if ch == "F" { 70 } else if ch == "G" { 71 } else if ch == "H" { 72 } else if ch == "I" { 73 } else if ch == "J" { 74 }
+  else if ch == "K" { 75 } else if ch == "L" { 76 } else if ch == "M" { 77 } else if ch == "N" { 78 } else if ch == "O" { 79 }
+  else if ch == "P" { 80 } else if ch == "Q" { 81 } else if ch == "R" { 82 } else if ch == "S" { 83 } else if ch == "T" { 84 }
+  else if ch == "U" { 85 } else if ch == "V" { 86 } else if ch == "W" { 87 } else if ch == "X" { 88 } else if ch == "Y" { 89 }
+  else if ch == "Z" { 90 } else if ch == "a" { 97 } else if ch == "b" { 98 } else if ch == "c" { 99 } else if ch == "d" { 100 }
+  else if ch == "e" { 101 } else if ch == "f" { 102 } else if ch == "g" { 103 } else if ch == "h" { 104 } else if ch == "i" { 105 }
+  else if ch == "j" { 106 } else if ch == "k" { 107 } else if ch == "l" { 108 } else if ch == "m" { 109 } else if ch == "n" { 110 }
+  else if ch == "o" { 111 } else if ch == "p" { 112 } else if ch == "q" { 113 } else if ch == "r" { 114 } else if ch == "s" { 115 }
+  else if ch == "t" { 116 } else if ch == "u" { 117 } else if ch == "v" { 118 } else if ch == "w" { 119 } else if ch == "x" { 120 }
+  else if ch == "y" { 121 } else if ch == "z" { 122 } else { 0 }
+}
+
+fn int_to_char(code : Int) -> String {
+  if code == 48 { "0" } else if code == 49 { "1" } else if code == 50 { "2" }
+  else if code == 51 { "3" } else if code == 52 { "4" } else if code == 53 { "5" }
+  else if code == 54 { "6" } else if code == 55 { "7" } else if code == 56 { "8" } else if code == 57 { "9" }
+  else if code >= 65 && code <= 90 {
+    upper_to_char(code)
+  } else if code >= 97 && code <= 122 {
+    lower_to_char(code)
+  } else { "?" }
+}
+
+fn upper_to_char(code : Int) -> String {
+  if code == 65 { "A" } else if code == 66 { "B" } else if code == 67 { "C" } else if code == 68 { "D" }
+  else if code == 69 { "E" } else if code == 70 { "F" } else if code == 71 { "G" } else if code == 72 { "H" }
+  else if code == 73 { "I" } else if code == 74 { "J" } else if code == 75 { "K" } else if code == 76 { "L" }
+  else if code == 77 { "M" } else if code == 78 { "N" } else if code == 79 { "O" } else if code == 80 { "P" }
+  else if code == 81 { "Q" } else if code == 82 { "R" } else if code == 83 { "S" } else if code == 84 { "T" }
+  else if code == 85 { "U" } else if code == 86 { "V" } else if code == 87 { "W" } else if code == 88 { "X" }
+  else if code == 89 { "Y" } else { "Z" }
+}
+
+fn lower_to_char(code : Int) -> String {
+  if code == 97 { "a" } else if code == 98 { "b" } else if code == 99 { "c" } else if code == 100 { "d" }
+  else if code == 101 { "e" } else if code == 102 { "f" } else if code == 103 { "g" } else if code == 104 { "h" }
+  else if code == 105 { "i" } else if code == 106 { "j" } else if code == 107 { "k" } else if code == 108 { "l" }
+  else if code == 109 { "m" } else if code == 110 { "n" } else if code == 111 { "o" } else if code == 112 { "p" }
+  else if code == 113 { "q" } else if code == 114 { "r" } else if code == 115 { "s" } else if code == 116 { "t" }
+  else if code == 117 { "u" } else if code == 118 { "v" } else if code == 119 { "w" } else if code == 120 { "x" }
+  else if code == 121 { "y" } else { "z" }
 }
 
 // --- Matcher ---
@@ -207,6 +279,67 @@ pub fn Regex::find_all(self : Regex, input : String) -> Array[Int] {
     }
   }
   positions
+}
+
+// --- Match Result with captured groups ---
+pub(all) struct MatchResult {
+  matched : Bool
+  start : Int
+  end : Int
+  groups : Array[String]
+}
+
+pub fn MatchResult::new(matched : Bool, start : Int, end : Int, groups : Array[String]) -> MatchResult {
+  MatchResult::{ matched, start, end, groups }
+}
+
+pub fn Regex::match_result(self : Regex, input : String) -> MatchResult {
+  let end = match_ast(self.ast, input, 0)
+  if end >= 0 {
+    MatchResult::new(true, 0, end, [])
+  } else {
+    MatchResult::new(false, -1, -1, [])
+  }
+}
+
+// --- Split string by regex ---
+pub fn Regex::split(self : Regex, input : String) -> Array[String] {
+  let parts : Array[String] = []
+  split_rec(self.ast, input, 0, 0, parts)
+}
+
+fn split_rec(ast : RegexAST, input : String, pos : Int, last : Int, parts : Array[String]) -> Array[String] {
+  if pos >= input.length() {
+    let remaining = input.substring(start=last, end=input.length())
+    parts.push(remaining)
+    parts
+  } else {
+    let end = match_ast(ast, input, pos)
+    if end > pos {
+      let before = input.substring(start=last, end=pos)
+      parts.push(before)
+      split_rec(ast, input, end, end, parts)
+    } else {
+      split_rec(ast, input, pos + 1, last, parts)
+    }
+  }
+}
+
+// --- Count matches ---
+pub fn Regex::count(self : Regex, input : String) -> Int {
+  count_rec(self.ast, input, 0, 0)
+}
+
+fn count_rec(ast : RegexAST, input : String, pos : Int, count : Int) -> Int {
+  if pos >= input.length() { count }
+  else {
+    let end = match_ast(ast, input, pos)
+    if end > pos {
+      count_rec(ast, input, end, count + 1)
+    } else {
+      count_rec(ast, input, pos + 1, count)
+    }
+  }
 }
 
 pub fn Regex::replace(self : Regex, input : String, replacement : String) -> String {

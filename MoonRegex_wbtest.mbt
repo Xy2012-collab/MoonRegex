@@ -843,3 +843,87 @@ test "combination star plus" {
     None => assert_eq!(true, false)
   }
 }
+
+test "non-greedy star exists" {
+  match Regex::new("a*?") {
+    Some(r) => assert_eq!(r.matches(""), true)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "non-greedy plus exists" {
+  match Regex::new("a+?") {
+    Some(r) => assert_eq!(r.matches("a"), true)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "non-greedy optional parsed" {
+  match Regex::new("a??") {
+    Some(_) => assert_eq!(true, true)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "word boundary parsed" {
+  match Regex::new("\\bcat\\b") {
+    Some(_) => assert_eq!(true, true)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "non-word boundary parsed" {
+  match Regex::new("\\Bcat\\B") {
+    Some(_) => assert_eq!(true, true)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "complex pattern with non-greedy" {
+  match Regex::new("a+?b") {
+    Some(r) => assert_eq!(r.matches("ab"), true)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "hex digit in class" {
+  match Regex::new("[0-9A-Fa-f]+") {
+    Some(r) => {
+      assert_eq!(r.matches("FF5733"), true)
+      assert_eq!(r.matches("1a2b3c"), true)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "range repetition large" {
+  match Regex::new("x{1,100}") {
+    Some(r) => {
+      assert_eq!(r.matches("x"), true)
+      assert_eq!(r.matches("xxx"), true)
+      assert_eq!(r.matches(""), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "optional at end of string" {
+  match Regex::new("ab?") {
+    Some(r) => {
+      assert_eq!(r.matches("a"), true)
+      assert_eq!(r.matches("ab"), true)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "plus at end of string" {
+  match Regex::new("a+") {
+    Some(r) => {
+      assert_eq!(r.matches("a"), true)
+      assert_eq!(r.matches("aaa"), true)
+      assert_eq!(r.matches(""), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}

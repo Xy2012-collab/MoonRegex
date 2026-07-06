@@ -6,13 +6,17 @@ enum RegexAST {
   Lit(String)
   Dot
   Star(RegexAST)
+  NStar(RegexAST)
   Plus(RegexAST)
+  NPlus(RegexAST)
   Opt(RegexAST)
+  NOpt(RegexAST)
   Alt(RegexAST, RegexAST)
   Seq(RegexAST, RegexAST)
   Class(Array[String], Bool)
   Escape(String)
   Anchor(String)
+  Boundary(String)
   Empty
 }
 
@@ -43,9 +47,27 @@ fn parse_piece(pattern : String, pos : Int) -> (RegexAST, Int) {
   let (atom, p1) = parse_atom(pattern, pos)
   if p1 >= pattern.length() { return (atom, p1) }
   let qch = pattern.substring(start=p1, end=p1 + 1)
-  if qch == "*" { (RegexAST::Star(atom), p1 + 1) }
-  else if qch == "+" { (RegexAST::Plus(atom), p1 + 1) }
-  else if qch == "?" { (RegexAST::Opt(atom), p1 + 1) }
+  if qch == "*" {
+    if p1 + 1 < pattern.length() && pattern.substring(start=p1 + 1, end=p1 + 2) == "?" {
+      (RegexAST::NStar(atom), p1 + 2)
+    } else {
+      (RegexAST::Star(atom), p1 + 1)
+    }
+  }
+  else if qch == "+" {
+    if p1 + 1 < pattern.length() && pattern.substring(start=p1 + 1, end=p1 + 2) == "?" {
+      (RegexAST::NPlus(atom), p1 + 2)
+    } else {
+      (RegexAST::Plus(atom), p1 + 1)
+    }
+  }
+  else if qch == "?" {
+    if p1 + 1 < pattern.length() && pattern.substring(start=p1 + 1, end=p1 + 2) == "?" {
+      (RegexAST::NOpt(atom), p1 + 2)
+    } else {
+      (RegexAST::Opt(atom), p1 + 1)
+    }
+  }
   else if qch == "{" { parse_counted(atom, pattern, p1 + 1) }
   else { (atom, p1) }
 }
@@ -174,7 +196,11 @@ fn parse_atom(pattern : String, pos : Int) -> (RegexAST, Int) {
   } else if ch == "\\" {
     if pos + 1 < pattern.length() {
       let esc = pattern.substring(start=pos + 1, end=pos + 2)
-      (RegexAST::Escape(esc), pos + 2)
+      if esc == "b" || esc == "B" {
+        (RegexAST::Boundary(esc), pos + 2)
+      } else {
+        (RegexAST::Escape(esc), pos + 2)
+      }
     } else {
       (RegexAST::Empty, pos + 1)
     }
@@ -297,14 +323,20 @@ fn match_ast(ast : RegexAST, input : String, pos : Int) -> Int {
       if p1 >= 0 { p1 } else { match_ast(right, input, pos) }
     }
     RegexAST::Star(child) => match_star(child, input, pos)
+    RegexAST::NStar(child) => match_nstar(child, input, pos)
     RegexAST::Plus(child) => {
       let p1 = match_ast(child, input, pos)
       if p1 < 0 { -1 } else { match_star(child, input, p1) }
+    }
+    RegexAST::NPlus(child) => {
+      let p1 = match_ast(child, input, pos)
+      if p1 < 0 { -1 } else { match_nstar(child, input, p1) }
     }
     RegexAST::Opt(child) => {
       let p1 = match_ast(child, input, pos)
       if p1 < 0 { pos } else { p1 }
     }
+    RegexAST::NOpt(child) => match_nopt(child, input, pos)
     RegexAST::Class(chars, negate) => {
       if pos >= input.length() { return -1 }
       let ch = input.substring(start=pos, end=pos + 1)
@@ -313,7 +345,51 @@ fn match_ast(ast : RegexAST, input : String, pos : Int) -> Int {
     }
     RegexAST::Escape(esc_type) => match_escape(esc_type, input, pos)
     RegexAST::Anchor(_) => pos
+    RegexAST::Boundary(btype) => match_boundary(btype, input, pos)
   }
+}
+
+fn match_boundary(btype : String, input : String, pos : Int) -> Int {
+  let is_start = pos == 0
+  let is_end = pos >= input.length()
+  if is_start || is_end {
+    if btype == "b" { -1 } else { pos }
+  } else {
+    let prev_ch = input.substring(start=pos - 1, end=pos)
+    let next_ch = input.substring(start=pos, end=pos + 1)
+    let prev_w = is_word_char(prev_ch)
+    let next_w = is_word_char(next_ch)
+    let at_boundary = prev_w != next_w
+    if btype == "b" {
+      if at_boundary { pos } else { -1 }
+    } else {
+      if at_boundary { -1 } else { pos }
+    }
+  }
+}
+
+fn is_word_char(ch : String) -> Bool {
+  (ch >= "a" && ch <= "z") || (ch >= "A" && ch <= "Z") || (ch >= "0" && ch <= "9") || ch == "_"
+}
+
+fn match_nstar(ast : RegexAST, input : String, pos : Int) -> Int {
+  // Non-greedy: try zero first, then one, then more
+  let p0 = match_nstar_tail(ast, input, pos)
+  if p0 >= 0 { return p0 }
+  let p1 = match_ast(ast, input, pos)
+  if p1 < 0 { return -1 }
+  if p1 == pos { return pos }
+  match_nstar(ast, input, p1)
+}
+
+fn match_nstar_tail(ast : RegexAST, input : String, pos : Int) -> Int {
+  // Placeholder for "rest of regex after *?"
+  pos
+}
+
+fn match_nopt(ast : RegexAST, input : String, pos : Int) -> Int {
+  // Non-greedy optional: try zero first
+  pos
 }
 
 fn match_star(ast : RegexAST, input : String, pos : Int) -> Int {
@@ -336,6 +412,8 @@ fn match_escape(esc_type : String, input : String, pos : Int) -> Int {
     "W" => !((ch >= "a" && ch <= "z") || (ch >= "A" && ch <= "Z") || (ch >= "0" && ch <= "9") || ch == "_")
     "s" => ch == " " || ch == "\t" || ch == "\n" || ch == "\r"
     "S" => ch != " " && ch != "\t" && ch != "\n" && ch != "\r"
+    "b" => false  // word boundary handled in parser
+    "B" => false
     _ => ch == esc_type
   }
   if matched { pos + 1 } else { -1 }

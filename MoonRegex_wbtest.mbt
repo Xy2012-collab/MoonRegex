@@ -568,3 +568,149 @@ test "multiple groups" {
     None => assert_eq!(true, false)
   }
 }
+
+test "exact length match" {
+  match Regex::new("^\\d{5}$") {
+    Some(r) => {
+      assert_eq!(r.matches("12345"), true)
+      assert_eq!(r.matches("1234"), false)
+      assert_eq!(r.matches("123456"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "log format pattern" {
+  match Regex::new("\\[\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\]") {
+    Some(r) => {
+      assert_eq!(r.matches("[2026-07-04 14:30:15]"), true)
+      assert_eq!(r.matches("[2026-7-4 14:30:15]"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "version number pattern" {
+  match Regex::new("\\d+\\.\\d+\\.\\d+") {
+    Some(r) => {
+      assert_eq!(r.matches("1.2.3"), true)
+      assert_eq!(r.matches("10.20.30"), true)
+      assert_eq!(r.matches("1.2"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "path separator pattern" {
+  match Regex::new("[./]") {
+    Some(r) => {
+      assert_eq!(r.matches("/"), true)
+      assert_eq!(r.matches("."), true)
+      assert_eq!(r.matches("-"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "username pattern" {
+  match Regex::new("[a-zA-Z][a-zA-Z0-9_]{2,15}") {
+    Some(r) => {
+      assert_eq!(r.matches("user123"), true)
+      assert_eq!(r.matches("abc"), true)
+      assert_eq!(r.matches("12user"), false)
+      assert_eq!(r.matches("ab"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "split by comma with spaces" {
+  match Regex::new("\\s*,\\s*") {
+    Some(r) => {
+      let parts = r.split("a, b,  c")
+      assert_eq!(parts.length(), 3)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "count words" {
+  match Regex::new("[a-zA-Z]+") {
+    Some(r) => assert_eq!(r.count("hello world test"), 3)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "replace with capture reference" {
+  match Regex::new("\\d+") {
+    Some(r) => assert_eq!(r.replace("id: 12345", "X"), "id: X")
+    None => assert_eq!(true, false)
+  }
+}
+
+test "alternation in group" {
+  match Regex::new("(Mr|Ms|Dr)\\.\\s+\\w+") {
+    Some(r) => {
+      assert_eq!(r.matches("Mr. Smith"), true)
+      assert_eq!(r.matches("Dr. Jones"), true)
+      assert_eq!(r.matches("Mrs. Brown"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "optional at start" {
+  match Regex::new("-?\\d+") {
+    Some(r) => {
+      assert_eq!(r.matches("42"), true)
+      assert_eq!(r.matches("-42"), true)
+      assert_eq!(r.matches("--42"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "multiple optional groups" {
+  match Regex::new("a(b)?(c)?d") {
+    Some(r) => {
+      assert_eq!(r.matches("ad"), true)
+      assert_eq!(r.matches("abd"), true)
+      assert_eq!(r.matches("acd"), true)
+      assert_eq!(r.matches("abcd"), true)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "plus and star combination" {
+  match Regex::new("a+b*c") {
+    Some(r) => {
+      assert_eq!(r.matches("ac"), true)
+      assert_eq!(r.matches("abc"), true)
+      assert_eq!(r.matches("aac"), true)
+      assert_eq!(r.matches("abbbbc"), true)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "match result on full match" {
+  match Regex::new("[a-z]+") {
+    Some(r) => {
+      let result = r.match_result("hello")
+      assert_eq!(result.matched, true)
+      assert_eq!(result.end, 5)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "empty pattern matches everything" {
+  match Regex::new("") {
+    Some(r) => {
+      assert_eq!(r.matches(""), true)
+      assert_eq!(r.matches("abc"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}

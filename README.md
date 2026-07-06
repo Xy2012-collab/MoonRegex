@@ -14,7 +14,7 @@
 ## 安装
 
 ```
-moon add placeholder/MoonRegex
+moon add X1119/MoonRegex
 ```
 
 ## 快速开始

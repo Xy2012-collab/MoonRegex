@@ -714,3 +714,85 @@ test "empty pattern matches everything" {
     None => assert_eq!(true, false)
   }
 }
+
+test "url validation pattern" {
+  match Regex::new("https?://[a-zA-Z0-9.]+(/[a-zA-Z0-9./]*)?") {
+    Some(r) => {
+      assert_eq!(r.matches("https://example.com"), true)
+      assert_eq!(r.matches("http://site.org/path"), true)
+      assert_eq!(r.matches("ftp://bad.com"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+
+test "camelCase identifier" {
+  match Regex::new("[a-z]+([A-Z][a-z]+)*") {
+    Some(r) => {
+      assert_eq!(r.matches("hello"), true)
+      assert_eq!(r.matches("helloWorld"), true)
+      assert_eq!(r.matches("helloWorldTest"), true)
+      assert_eq!(r.matches("Hello"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "tag with content" {
+  match Regex::new("<[a-z]+>[^<]*</[a-z]+>") {
+    Some(r) => {
+      assert_eq!(r.matches("<div>hello</div>"), true)
+      assert_eq!(r.matches("<span>text</span>"), true)
+      assert_eq!(r.matches("<div>hello"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "find at start" {
+  match Regex::new("start") {
+    Some(r) => assert_eq!(r.find("start middle end"), 0)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "find at end" {
+  match Regex::new("end") {
+    Some(r) => assert_eq!(r.find("start middle end"), 13)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "split by multiple delimiters" {
+  match Regex::new("[,;]") {
+    Some(r) => {
+      let parts = r.split("a,b;c")
+      assert_eq!(parts.length(), 3)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "count nested groups" {
+  match Regex::new("((a)b)") {
+    Some(r) => assert_eq!(r.count("ab ab ab"), 3)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "matches null input" {
+  match Regex::new("a*") {
+    Some(r) => assert_eq!(r.matches(""), true)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "word boundary pattern" {
+  match Regex::new("\\bcat\\b") {
+    Some(r) => {
+      assert_eq!(r.matches("cat"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}

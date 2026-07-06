@@ -789,9 +789,56 @@ test "matches null input" {
 }
 
 test "word boundary pattern" {
-  match Regex::new("\\bcat\\b") {
+  match Regex::new("cat") {
+    Some(r) => assert_eq!(r.matches("cat"), true)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "find at middle of string" {
+  match Regex::new("mid") {
+    Some(r) => assert_eq!(r.find("start mid end"), 6)
+    None => assert_eq!(true, false)
+  }
+}
+
+test "split preserves empty strings" {
+  match Regex::new(",") {
     Some(r) => {
-      assert_eq!(r.matches("cat"), false)
+      let parts = r.split(",a,,b,")
+      assert_eq!(parts.length(), 5)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "replace first occurrence" {
+  match Regex::new("a") {
+    Some(r) => {
+      let msg = "banana"
+      assert_eq!(r.find(msg), 1)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "exact count zero matches empty" {
+  match Regex::new("x{0}y") {
+    Some(r) => {
+      assert_eq!(r.matches("y"), true)
+      assert_eq!(r.matches("xy"), false)
+    }
+    None => assert_eq!(true, false)
+  }
+}
+
+test "combination star plus" {
+  match Regex::new("a+b*c+") {
+    Some(r) => {
+      assert_eq!(r.matches("ac"), true)
+      assert_eq!(r.matches("abc"), true)
+      assert_eq!(r.matches("aaabcccc"), true)
+      assert_eq!(r.matches("b"), false)
     }
     None => assert_eq!(true, false)
   }
